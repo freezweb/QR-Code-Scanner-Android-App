@@ -18,9 +18,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        android:layout_marginLeft="10dp"
         android:layout_marginStart="10dp"
-        android:text="No Barcode Detected"
+        android:layout_marginLeft="10dp"
+        android:background="#00BCD4"
+        android:text="Keinen QR Gefunden"
         android:textColor="@android:color/white"
         android:textSize="20sp" />
 

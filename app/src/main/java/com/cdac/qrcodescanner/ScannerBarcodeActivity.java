@@ -1,26 +1,40 @@
 package com.cdac.qrcodescanner;
 
 import android.Manifest;
+import android.app.NotificationManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
 import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 
 public class ScannerBarcodeActivity extends AppCompatActivity {
 
@@ -102,13 +116,83 @@ public class ScannerBarcodeActivity extends AppCompatActivity {
             @Override
             public void run() {
                 intentData = barCode.valueAt(0).displayValue;
-                textViewBarCodeValue.setText(intentData);
+
+
+
+                textViewBarCodeValue.setText( intentData);
                 copyToClipBoard(intentData);
+
+
+
+                URL url;
+                HttpURLConnection urlConnection = null;
+                try {
+                    url = new URL("https://davasto.de/cov19/app.php?identifire=" + intentData);
+
+                        urlConnection = (HttpURLConnection) url.openConnection();
+
+                        int responseCode = urlConnection.getResponseCode();
+
+                        if(responseCode == HttpURLConnection.HTTP_OK){
+                            String server_response = readStream(urlConnection.getInputStream());
+                            Log.v("CatalogClient", server_response);
+                            textViewBarCodeValue.setText( server_response);
+
+                            if (server_response.contains("[OK]")){
+                                textViewBarCodeValue.setBackgroundColor(Color.GREEN);
+                            }
+                            if (server_response.contains("[Termin]")){
+                                textViewBarCodeValue.setBackgroundColor(Color.RED);
+                            }
+                            if (server_response.contains("[Ueberweisung]")){
+                                textViewBarCodeValue.setBackgroundColor(Color.YELLOW);
+                            }
+
+
+
+                            copyToClipBoard(server_response);
+
+                        }
+
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+
+
+
+
+
+
+
             }
         });
     }
 
-
+    private String readStream(InputStream in) {
+        BufferedReader reader = null;
+        StringBuffer response = new StringBuffer();
+        try {
+            reader = new BufferedReader(new InputStreamReader(in));
+            String line = "";
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return response.toString();
+    }
     @Override
     protected void onPause() {
         super.onPause();
